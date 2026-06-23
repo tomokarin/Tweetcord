@@ -8,6 +8,20 @@ from datetime import datetime, timezone, timedelta
 import aiosqlite
 import discord
 from discord.ext import commands
+# --- Tweety-NS Monkey Patch ---
+# Twitter/X has migrated its client architecture from responsive-web/client-web (which loaded ondemand script chunks)
+# to a new web bundler layout (x-web/x-web), removing the old ondemand.s.js files completely.
+# This breaks Tweety-NS's TransactionGenerator.get_indices(), raising "Couldn't get animation key indices".
+# Since Twitter validates that the signature header is present/well-formed but does not strictly check dynamic animation keys,
+# this patch mocks out the HTML/JS indices parsing to generate transaction IDs with static fallback signatures.
+try:
+    from tweety.transaction import TransactionGenerator
+    TransactionGenerator.get_indices = lambda self, response=None: (0, [1, 2, 3])
+    TransactionGenerator.get_key = lambda self, response=None: "iuyHdYXy3ck7x5hVJrNT45pyw11bVHSF+Wmwc3SpOY+HqH9A+Wu3PYTzKlc76RCW"
+    TransactionGenerator.get_animation_key = lambda self, key_bytes, response: "000000000000000000"
+except Exception:
+    pass
+
 from tweety import Twitter
 
 from core.classes import ParsedTweet
